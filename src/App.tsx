@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useState } from 'react';
 import * as v from 'valibot';
 
@@ -25,6 +30,24 @@ const CommentSchema = v.object({
   postId: v.string(),
 });
 const CommentsSchema = v.array(CommentSchema);
+
+const NotificationSchema = v.object({
+  id: v.string(),
+  message: v.string(),
+  type: v.string(),
+  createdAt: v.string(),
+});
+
+const PaginatedResponseSchema = <T extends v.GenericSchema>(dataSchema: T) =>
+  v.object({
+    first: v.number(),
+    prev: v.nullable(v.number()),
+    next: v.nullable(v.number()),
+    last: v.number(),
+    pages: v.number(),
+    items: v.number(),
+    data: v.array(dataSchema),
+  });
 
 const fetchComments = async (postId: string) => {
   const url = new URL('http://localhost:3000/comments');
@@ -91,6 +114,13 @@ const removePost = async (postId: string) => {
   return await res.json();
 };
 
+const fetchNotifications = async ({ pageParam }: { pageParam: number }) => {
+  const url = new URL('http://localhost:3000/notifications');
+  url.searchParams.append('_page', `${pageParam}`);
+  const res = await fetch(url.toString());
+  return v.parse(PaginatedResponseSchema(NotificationSchema), await res.json());
+};
+
 export function App() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
@@ -121,6 +151,13 @@ export function App() {
 
   const [selectedPostId, setSelectedPostId] = useState('');
   const [isOptimisticMode, setIsOptimisticMode] = useState(false);
+
+  const notificationsQuery = useInfiniteQuery({
+    queryKey: ['notifications'],
+    queryFn: fetchNotifications,
+    getNextPageParam: (lastPage) => lastPage.next,
+    initialPageParam: 1,
+  });
 
   const queryClient = useQueryClient();
   const createPostMutation = useMutation({
@@ -234,6 +271,26 @@ export function App() {
             <li key={comment.id}>{comment.text}</li>
           ))}
         </ul>
+      )}
+
+      <h2>Notifications</h2>
+      <ul>
+        {notificationsQuery.data?.pages
+          .flatMap((page) => page.data)
+          .map((notification) => (
+            <li key={notification.id}>
+              <strong>{notification.type}</strong>: {notification.message}
+              <small>
+                {' '}
+                at {new Date(notification.createdAt).toLocaleString()}
+              </small>
+            </li>
+          ))}
+      </ul>
+      {notificationsQuery.hasNextPage && (
+        <button onClick={() => notificationsQuery.fetchNextPage()}>
+          load more
+        </button>
       )}
     </>
   );
