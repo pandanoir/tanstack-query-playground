@@ -163,10 +163,10 @@ export function App() {
   const createPostMutation = useMutation({
     mutationFn: isOptimisticMode
       ? async (title: string) => {
-        await new Promise((r) => setTimeout(r, 1000));
-        if (Math.trunc(Math.random() * 2) === 0) throw new Error('fail');
-        return await createPost(title);
-      }
+          await new Promise((r) => setTimeout(r, 1000));
+          if (Math.trunc(Math.random() * 2) === 0) throw new Error('fail');
+          return await createPost(title);
+        }
       : createPost,
 
     onMutate: async (title) => {
@@ -209,7 +209,9 @@ export function App() {
 
   return selectedPostId !== '' ? (
     <>
-      <button onClick={() => setSelectedPostId('')}>back</button>
+      <button type="button" onClick={() => setSelectedPostId('')}>
+        back
+      </button>
       <Post id={selectedPostId} />
     </>
   ) : (
@@ -231,6 +233,7 @@ export function App() {
             {post.title} ({post.views} views){' '}
             <button
               disabled={post.id === 'xxx'}
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 removePostMutation.mutate(post.id);
@@ -288,7 +291,10 @@ export function App() {
           ))}
       </ul>
       {notificationsQuery.hasNextPage && (
-        <button onClick={() => notificationsQuery.fetchNextPage()}>
+        <button
+          type="button"
+          onClick={() => notificationsQuery.fetchNextPage()}
+        >
           load more
         </button>
       )}
