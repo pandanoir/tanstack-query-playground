@@ -64,6 +64,16 @@ const createPost = async (title: string) => {
   }
   return await res.json();
 };
+const removePost = async (postId: string) => {
+  const res = await fetch(`http://localhost:3000/posts/${postId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error('Request failed');
+  }
+  return await res.json();
+};
 
 export function App() {
   const { isLoading, error, data } = useQuery({
@@ -77,6 +87,12 @@ export function App() {
   const queryClient = useQueryClient();
   const createPostMutation = useMutation({
     mutationFn: createPost,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+  const removePostMutation = useMutation({
+    mutationFn: removePost,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
@@ -96,7 +112,15 @@ export function App() {
       <ul>
         {data.map((post) => (
           <li key={post.id} onClick={() => setSelectedPostId(post.id)}>
-            {post.title} ({post.views} views)
+            {post.title} ({post.views} views){' '}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removePostMutation.mutate(post.id);
+              }}
+            >
+              remove
+            </button>
           </li>
         ))}
       </ul>
