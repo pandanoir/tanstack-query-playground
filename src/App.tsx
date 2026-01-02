@@ -42,8 +42,12 @@ const fetchCommentsByUserId = async (userId: string) => {
 
 function Post({ id }: { id: string }) {
   const { isLoading, error, data } = useQuery({
-    queryKey: ['comments', 'filter', id],
-    queryFn: () => fetchComments(id),
+    queryKey: ['comments', 'filter by post id', id],
+    queryFn: async ({ queryKey }) => {
+      await new Promise((r) => setTimeout(r, 5000));
+      return await fetchComments(queryKey[2]);
+    },
+
     staleTime: 30_000, // 再レンダリングした時、前のデータが30秒以内のものなら再フェッチしない
   });
 
@@ -106,7 +110,7 @@ export function App() {
 
   const myCommentsQuery = useQuery({
     enabled: !!profileQuery.data?.id,
-    queryKey: ['comments', 'filter', profileQuery.data?.id],
+    queryKey: ['comments', 'filter by user id', profileQuery.data?.id],
     queryFn: async ({ queryKey }) => {
       const userId = queryKey[2]; // enabledでチェックしてるので基本的にtruthyのはず
       if (userId) {
@@ -177,6 +181,12 @@ export function App() {
         {postsQuery.data.map((post) => (
           <li
             key={post.id}
+            onMouseEnter={() => {
+              queryClient.prefetchQuery({
+                queryKey: ['comments', 'filter by post id', post.id],
+                queryFn: ({ queryKey }) => fetchComments(queryKey[2]),
+              });
+            }}
             onClick={() => {
               if (post.id !== 'xxx') setSelectedPostId(post.id);
             }}
