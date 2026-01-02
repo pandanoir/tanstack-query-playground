@@ -54,6 +54,8 @@ export function App() {
   const { isLoading, error, data } = useQuery({
     queryKey: ['posts'],
     queryFn: fetchPosts,
+    refetchOnWindowFocus: true, // dataがstaleになっていてウィンドウに復帰したらリフェッチ
+    staleTime: 3_000,
   });
   const [selectedPostId, setSelectedPostId] = useState('');
 
