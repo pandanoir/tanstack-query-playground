@@ -1,0 +1,31 @@
+{
+  "name": "my-vite-react-template",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"json-server db.json5\"",
+    "build": "tsc -b && vite build",
+    "lint": "biome lint ./src",
+    "lint:format": "biome format ./src",
+    "fix:lint": "biome lint --write ./src",
+    "fix:format": "biome format --write ./src",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.90.16",
+    "json-server": "1.0.0-beta.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "valibot": "1.2.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.2",
+    "concurrently": "9.2.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.0"
+  }
+}
