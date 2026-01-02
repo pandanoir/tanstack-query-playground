@@ -77,11 +77,13 @@ const removePost = async (postId: string) => {
 
 export function App() {
   const { isLoading, error, data } = useQuery({
+    enabled: true, // falseにするとdataがundefinedの状態になる
     queryKey: ['posts'],
     queryFn: fetchPosts,
     refetchOnWindowFocus: true, // dataがstaleになっていてウィンドウに復帰したらリフェッチ
     staleTime: 3_000,
   });
+
   const [selectedPostId, setSelectedPostId] = useState('');
   const [isOptimisticMode, setIsOptimisticMode] = useState(false);
 
@@ -131,7 +133,7 @@ export function App() {
 
   if (isLoading) return 'loading';
   if (error) return `error: ${error}`;
-  if (!data) return 'loading';
+  if (!data) return 'query is disabled';
 
   return selectedPostId !== '' ? (
     <>
