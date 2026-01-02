@@ -2,6 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import * as v from 'valibot';
 
+const ProfileSchema = v.object({
+  name: v.string(),
+  id: v.string(),
+});
+
 const PostSchema = v.object({
   id: v.string(),
   title: v.string(),
@@ -24,6 +29,13 @@ const CommentsSchema = v.array(CommentSchema);
 const fetchComments = async (postId: string) => {
   const url = new URL('http://localhost:3000/comments');
   url.searchParams.append('postId', postId);
+  const res = await fetch(url.toString());
+  return v.parse(CommentsSchema, await res.json());
+};
+
+const fetchCommentsByUserId = async (userId: string) => {
+  const url = new URL('http://localhost:3000/comments');
+  url.searchParams.append('userId', userId);
   const res = await fetch(url.toString());
   return v.parse(CommentsSchema, await res.json());
 };
@@ -76,12 +88,31 @@ const removePost = async (postId: string) => {
 };
 
 export function App() {
-  const { isLoading, error, data } = useQuery({
+  const profileQuery = useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      const res = await fetch('http://localhost:3000/profile');
+      return v.parse(ProfileSchema, await res.json());
+    },
+  });
+
+  const postsQuery = useQuery({
     enabled: true, // falseにするとdataがundefinedの状態になる
     queryKey: ['posts'],
     queryFn: fetchPosts,
     refetchOnWindowFocus: true, // dataがstaleになっていてウィンドウに復帰したらリフェッチ
     staleTime: 3_000,
+  });
+
+  const myCommentsQuery = useQuery({
+    enabled: !!profileQuery.data?.id,
+    queryKey: ['comments', 'filter', profileQuery.data?.id],
+    queryFn: async ({ queryKey }) => {
+      const userId = queryKey[2]; // enabledでチェックしてるので基本的にtruthyのはず
+      if (userId) {
+        return await fetchCommentsByUserId(userId);
+      }
+    },
   });
 
   const [selectedPostId, setSelectedPostId] = useState('');
@@ -131,9 +162,9 @@ export function App() {
     },
   });
 
-  if (isLoading) return 'loading';
-  if (error) return `error: ${error}`;
-  if (!data) return 'query is disabled';
+  if (postsQuery.isLoading) return 'loading';
+  if (postsQuery.error) return `error: ${postsQuery.error}`;
+  if (!postsQuery.data) return 'query is disabled';
 
   return selectedPostId !== '' ? (
     <>
@@ -143,7 +174,7 @@ export function App() {
   ) : (
     <>
       <ul>
-        {data.map((post) => (
+        {postsQuery.data.map((post) => (
           <li
             key={post.id}
             onClick={() => {
@@ -163,6 +194,16 @@ export function App() {
           </li>
         ))}
       </ul>
+      my comments
+      {myCommentsQuery.isLoading ? (
+        'loading'
+      ) : (
+        <ul>
+          {myCommentsQuery.data?.map((comment) => (
+            <li key={comment.id}>{comment.text}</li>
+          ))}
+        </ul>
+      )}
       <label>
         <input
           type="checkbox"
