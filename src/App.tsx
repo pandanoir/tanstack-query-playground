@@ -32,7 +32,7 @@ function Post({ id }: { id: string }) {
   const { isLoading, error, data } = useQuery({
     queryKey: ['comments', 'filter', id],
     queryFn: () => fetchComments(id),
-    retry: false,
+    staleTime: 30_000, // 再レンダリングした時、前のデータが30秒以内のものなら再フェッチしない
   });
 
   if (isLoading) return 'loading';
@@ -54,7 +54,6 @@ export function App() {
   const { isLoading, error, data } = useQuery({
     queryKey: ['posts'],
     queryFn: fetchPosts,
-    retry: false,
   });
   const [selectedPostId, setSelectedPostId] = useState('');
 
