@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import * as v from 'valibot';
 import { rootRoute } from '../root.route';
+import { fetchPosts } from './fetchPosts';
+import { fetchComments, fetchCommentsByUserId } from './fetchComments';
+import { PostsSchema } from './postSchema';
 
 export const postsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -14,39 +17,6 @@ const ProfileSchema = v.object({
   name: v.string(),
   id: v.string(),
 });
-
-const PostSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  views: v.number(),
-});
-const PostsSchema = v.array(PostSchema);
-
-const fetchPosts = async () => {
-  const res = await fetch('http://localhost:3000/posts');
-  return v.parse(PostsSchema, await res.json());
-};
-
-const CommentSchema = v.object({
-  id: v.string(),
-  text: v.string(),
-  postId: v.string(),
-});
-const CommentsSchema = v.array(CommentSchema);
-
-const fetchComments = async (postId: string) => {
-  const url = new URL('http://localhost:3000/comments');
-  url.searchParams.append('postId', postId);
-  const res = await fetch(url.toString());
-  return v.parse(CommentsSchema, await res.json());
-};
-
-const fetchCommentsByUserId = async (userId: string) => {
-  const url = new URL('http://localhost:3000/comments');
-  url.searchParams.append('userId', userId);
-  const res = await fetch(url.toString());
-  return v.parse(CommentsSchema, await res.json());
-};
 
 const createPost = async (title: string) => {
   const res = await fetch('http://localhost:3000/posts', {
@@ -120,13 +90,12 @@ export function PostsPage() {
       const prevPosts = queryClient.getQueryData(['posts']);
 
       // 楽観的更新
-      queryClient.setQueryData(
-        ['posts'],
-        (old: v.InferOutput<typeof PostsSchema>) => [
-          ...old,
-          { id: 'xxx', title, views: 0 },
-        ],
-      );
+      queryClient.setQueryData(['posts'], (old: unknown) => {
+        const res = v.safeParse(PostsSchema, old);
+        if (res.success) {
+          return [...res.output, { id: 'xxx', title, views: 0 }];
+        }
+      });
 
       // 復元できるように今の状態を渡す
       return { prevPosts };

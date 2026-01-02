@@ -1,21 +1,7 @@
 import { createRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import * as v from 'valibot';
 import { rootRoute } from '../root.route';
-
-const CommentSchema = v.object({
-  id: v.string(),
-  text: v.string(),
-  postId: v.string(),
-});
-const CommentsSchema = v.array(CommentSchema);
-
-const fetchComments = async (postId: string) => {
-  const url = new URL('http://localhost:3000/comments');
-  url.searchParams.append('postId', postId);
-  const res = await fetch(url.toString());
-  return v.parse(CommentsSchema, await res.json());
-};
+import { fetchComments } from './fetchComments';
 
 export const postDetailRoute = createRoute({
   getParentRoute: () => rootRoute,

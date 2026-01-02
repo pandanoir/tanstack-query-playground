@@ -1,38 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
-import * as v from 'valibot';
 import { rootRoute } from '../root.route';
+import { fetchNotifications } from './fetchNotifications';
 
 export const notificationsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/notifications',
   component: NotificationsPage,
 });
-
-const NotificationSchema = v.object({
-  id: v.string(),
-  message: v.string(),
-  type: v.string(),
-  createdAt: v.string(),
-});
-
-const PaginatedResponseSchema = <T extends v.GenericSchema>(dataSchema: T) =>
-  v.object({
-    first: v.number(),
-    prev: v.nullable(v.number()),
-    next: v.nullable(v.number()),
-    last: v.number(),
-    pages: v.number(),
-    items: v.number(),
-    data: v.array(dataSchema),
-  });
-
-const fetchNotifications = async ({ pageParam }: { pageParam: number }) => {
-  const url = new URL('http://localhost:3000/notifications');
-  url.searchParams.append('_page', `${pageParam}`);
-  const res = await fetch(url.toString());
-  return v.parse(PaginatedResponseSchema(NotificationSchema), await res.json());
-};
 
 export function NotificationsPage() {
   const notificationsQuery = useInfiniteQuery({
