@@ -204,16 +204,6 @@ export function App() {
           </li>
         ))}
       </ul>
-      my comments
-      {myCommentsQuery.isLoading ? (
-        'loading'
-      ) : (
-        <ul>
-          {myCommentsQuery.data?.map((comment) => (
-            <li key={comment.id}>{comment.text}</li>
-          ))}
-        </ul>
-      )}
       <label>
         <input
           type="checkbox"
@@ -235,6 +225,16 @@ export function App() {
         <input name="title" />
         <button type="submit">create</button>
       </form>
+      <h2>My comments</h2>
+      {myCommentsQuery.isLoading ? (
+        'loading'
+      ) : (
+        <ul>
+          {myCommentsQuery.data?.map((comment) => (
+            <li key={comment.id}>{comment.text}</li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }
