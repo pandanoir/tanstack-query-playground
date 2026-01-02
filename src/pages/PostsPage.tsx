@@ -1,9 +1,5 @@
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import * as v from 'valibot';
 
@@ -31,24 +27,6 @@ const CommentSchema = v.object({
 });
 const CommentsSchema = v.array(CommentSchema);
 
-const NotificationSchema = v.object({
-  id: v.string(),
-  message: v.string(),
-  type: v.string(),
-  createdAt: v.string(),
-});
-
-const PaginatedResponseSchema = <T extends v.GenericSchema>(dataSchema: T) =>
-  v.object({
-    first: v.number(),
-    prev: v.nullable(v.number()),
-    next: v.nullable(v.number()),
-    last: v.number(),
-    pages: v.number(),
-    items: v.number(),
-    data: v.array(dataSchema),
-  });
-
 const fetchComments = async (postId: string) => {
   const url = new URL('http://localhost:3000/comments');
   url.searchParams.append('postId', postId);
@@ -62,32 +40,6 @@ const fetchCommentsByUserId = async (userId: string) => {
   const res = await fetch(url.toString());
   return v.parse(CommentsSchema, await res.json());
 };
-
-function Post({ id }: { id: string }) {
-  const { isLoading, error, data } = useQuery({
-    queryKey: ['comments', 'filter by post id', id],
-    queryFn: async ({ queryKey }) => {
-      await new Promise((r) => setTimeout(r, 5000));
-      return await fetchComments(queryKey[2]);
-    },
-
-    staleTime: 30_000, // 再レンダリングした時、前のデータが30秒以内のものなら再フェッチしない
-  });
-
-  if (isLoading) return 'loading';
-  if (error) return `error: ${error}`;
-  if (!data) return 'loading';
-
-  return data.length > 0 ? (
-    <ul>
-      {data.map((comment) => (
-        <li key={comment.id}>{comment.text}</li>
-      ))}
-    </ul>
-  ) : (
-    <div>empty</div>
-  );
-}
 
 const createPost = async (title: string) => {
   const res = await fetch('http://localhost:3000/posts', {
@@ -103,6 +55,7 @@ const createPost = async (title: string) => {
   }
   return await res.json();
 };
+
 const removePost = async (postId: string) => {
   const res = await fetch(`http://localhost:3000/posts/${postId}`, {
     method: 'DELETE',
@@ -114,14 +67,7 @@ const removePost = async (postId: string) => {
   return await res.json();
 };
 
-const fetchNotifications = async ({ pageParam }: { pageParam: number }) => {
-  const url = new URL('http://localhost:3000/notifications');
-  url.searchParams.append('_page', `${pageParam}`);
-  const res = await fetch(url.toString());
-  return v.parse(PaginatedResponseSchema(NotificationSchema), await res.json());
-};
-
-export function App() {
+export function PostsPage() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -131,7 +77,6 @@ export function App() {
   });
 
   const postsQuery = useQuery({
-    enabled: true, // falseにするとdataがundefinedの状態になる
     queryKey: ['posts'],
     queryFn: fetchPosts,
     refetchOnWindowFocus: true, // dataがstaleになっていてウィンドウに復帰したらリフェッチ
@@ -142,31 +87,23 @@ export function App() {
     enabled: !!profileQuery.data?.id,
     queryKey: ['comments', 'filter by user id', profileQuery.data?.id],
     queryFn: async ({ queryKey }) => {
-      const userId = queryKey[2]; // enabledでチェックしてるので基本的にtruthyのはず
+      const userId = queryKey[2];
       if (userId) {
         return await fetchCommentsByUserId(userId);
       }
     },
   });
 
-  const [selectedPostId, setSelectedPostId] = useState('');
   const [isOptimisticMode, setIsOptimisticMode] = useState(false);
-
-  const notificationsQuery = useInfiniteQuery({
-    queryKey: ['notifications'],
-    queryFn: fetchNotifications,
-    getNextPageParam: (lastPage) => lastPage.next,
-    initialPageParam: 1,
-  });
 
   const queryClient = useQueryClient();
   const createPostMutation = useMutation({
     mutationFn: isOptimisticMode
       ? async (title: string) => {
-          await new Promise((r) => setTimeout(r, 1000));
-          if (Math.trunc(Math.random() * 2) === 0) throw new Error('fail');
-          return await createPost(title);
-        }
+        await new Promise((r) => setTimeout(r, 1000));
+        if (Math.trunc(Math.random() * 2) === 0) throw new Error('fail');
+        return await createPost(title);
+      }
       : createPost,
 
     onMutate: async (title) => {
@@ -207,15 +144,9 @@ export function App() {
   if (postsQuery.error) return `error: ${postsQuery.error}`;
   if (!postsQuery.data) return 'query is disabled';
 
-  return selectedPostId !== '' ? (
+  return (
     <>
-      <button type="button" onClick={() => setSelectedPostId('')}>
-        back
-      </button>
-      <Post id={selectedPostId} />
-    </>
-  ) : (
-    <>
+      <h1>Posts</h1>
       <ul>
         {postsQuery.data.map((post) => (
           <li
@@ -226,11 +157,14 @@ export function App() {
                 queryFn: ({ queryKey }) => fetchComments(queryKey[2]),
               });
             }}
-            onClick={() => {
-              if (post.id !== 'xxx') setSelectedPostId(post.id);
-            }}
           >
-            {post.title} ({post.views} views){' '}
+            <Link
+              to="/posts/$id"
+              params={{ id: post.id }}
+              disabled={post.id === 'xxx'}
+            >
+              {post.title} ({post.views} views)
+            </Link>{' '}
             <button
               disabled={post.id === 'xxx'}
               type="button"
@@ -274,29 +208,6 @@ export function App() {
             <li key={comment.id}>{comment.text}</li>
           ))}
         </ul>
-      )}
-
-      <h2>Notifications</h2>
-      <ul>
-        {notificationsQuery.data?.pages
-          .flatMap((page) => page.data)
-          .map((notification) => (
-            <li key={notification.id}>
-              <strong>{notification.type}</strong>: {notification.message}
-              <small>
-                {' '}
-                at {new Date(notification.createdAt).toLocaleString()}
-              </small>
-            </li>
-          ))}
-      </ul>
-      {notificationsQuery.hasNextPage && (
-        <button
-          type="button"
-          onClick={() => notificationsQuery.fetchNextPage()}
-        >
-          load more
-        </button>
       )}
     </>
   );
