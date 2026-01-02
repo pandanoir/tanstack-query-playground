@@ -13,5 +13,3 @@ npm run dev で起動、localhost:5173へアクセスすると実際のアプリ
 - [x] 課題 9：Query の依存関係
 - [x] 課題 10：Prefetch
 - [x] 課題 11：Pagination / Infinite Query
-- [ ] 課題 12：Query Key 設計レビュー
-- [ ] 課題 13：Client State との分離
