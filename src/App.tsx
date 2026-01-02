@@ -83,11 +83,42 @@ export function App() {
     staleTime: 3_000,
   });
   const [selectedPostId, setSelectedPostId] = useState('');
+  const [isOptimisticMode, setIsOptimisticMode] = useState(false);
 
   const queryClient = useQueryClient();
   const createPostMutation = useMutation({
-    mutationFn: createPost,
-    onSuccess: async () => {
+    mutationFn: isOptimisticMode
+      ? async (title: string) => {
+        await new Promise((r) => setTimeout(r, 1000));
+        if (Math.trunc(Math.random() * 2) === 0) throw new Error('fail');
+        return await createPost(title);
+      }
+      : createPost,
+
+    onMutate: async (title) => {
+      // 進行中のリフェッチをキャンセル (楽観的更新したデータが上書きされるのを防ぐ)
+      await queryClient.cancelQueries({ queryKey: ['posts'] });
+      // 復元用に今の状態を保持
+      const prevPosts = queryClient.getQueryData(['posts']);
+
+      // 楽観的更新
+      queryClient.setQueryData(
+        ['posts'],
+        (old: v.InferOutput<typeof PostsSchema>) => [
+          ...old,
+          { id: 'xxx', title, views: 0 },
+        ],
+      );
+
+      // 復元できるように今の状態を渡す
+      return { prevPosts };
+    },
+    onError: async (_err, _newTodo, context) => {
+      if (context) {
+        await queryClient.setQueryData(['posts'], context.prevPosts); // ロールバック
+      }
+    },
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
@@ -111,9 +142,15 @@ export function App() {
     <>
       <ul>
         {data.map((post) => (
-          <li key={post.id} onClick={() => setSelectedPostId(post.id)}>
+          <li
+            key={post.id}
+            onClick={() => {
+              if (post.id !== 'xxx') setSelectedPostId(post.id);
+            }}
+          >
             {post.title} ({post.views} views){' '}
             <button
+              disabled={post.id === 'xxx'}
               onClick={(e) => {
                 e.stopPropagation();
                 removePostMutation.mutate(post.id);
@@ -124,6 +161,14 @@ export function App() {
           </li>
         ))}
       </ul>
+      <label>
+        <input
+          type="checkbox"
+          checked={isOptimisticMode}
+          onChange={(e) => setIsOptimisticMode(e.target.checked)}
+        />
+        optimistic mode
+      </label>
       <form
         onSubmit={(e) => {
           e.preventDefault();
