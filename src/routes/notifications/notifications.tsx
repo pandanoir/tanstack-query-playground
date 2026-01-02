@@ -1,5 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { createRoute } from '@tanstack/react-router';
 import * as v from 'valibot';
+import { rootRoute } from '../root.route';
+
+export const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notifications',
+  component: NotificationsPage,
+});
 
 const NotificationSchema = v.object({
   id: v.string(),
@@ -61,4 +69,3 @@ export function NotificationsPage() {
     </>
   );
 }
-

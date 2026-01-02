@@ -1,7 +1,14 @@
-import { Link } from '@tanstack/react-router';
+import { createRoute, Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import * as v from 'valibot';
+import { rootRoute } from '../root.route';
+
+export const postsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/posts',
+  component: PostsPage,
+});
 
 const ProfileSchema = v.object({
   name: v.string(),

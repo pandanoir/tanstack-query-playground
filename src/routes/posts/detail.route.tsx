@@ -1,7 +1,7 @@
 import { createRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import * as v from 'valibot';
-import { rootRoute } from './RootRoute';
+import { rootRoute } from '../root.route';
 
 const CommentSchema = v.object({
   id: v.string(),
