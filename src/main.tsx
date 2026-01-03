@@ -8,14 +8,21 @@ import { postDetailRoute } from './routes/posts/detail.route';
 import { notificationsRoute } from './routes/notifications/notifications.route';
 import { indexRoute } from './routes/index.route';
 import { rootRoute } from './routes/root.route';
+import { profileRoute } from './routes/me/me.route';
+
+const queryClient = new QueryClient();
 
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     indexRoute,
+    profileRoute,
     postsRoute,
     postDetailRoute,
     notificationsRoute,
   ]),
+  context: {
+    queryClient,
+  },
 });
 
 // ↓Linkなどで使うために必要
@@ -29,7 +36,7 @@ const root = document.getElementById('root');
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>
     </StrictMode>,
