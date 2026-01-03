@@ -6,16 +6,12 @@ import { rootRoute } from '../root.route';
 import { fetchPosts } from './fetchPosts';
 import { fetchComments, fetchCommentsByUserId } from './fetchComments';
 import { PostsSchema } from './postSchema';
+import { fetchProfile } from '../../lib/fetch/profile';
 
 export const postsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/posts',
   component: PostsPage,
-});
-
-const ProfileSchema = v.object({
-  name: v.string(),
-  id: v.string(),
 });
 
 const createPost = async (title: string) => {
@@ -47,10 +43,7 @@ const removePost = async (postId: string) => {
 export function PostsPage() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
-    queryFn: async () => {
-      const res = await fetch('http://localhost:3000/profile');
-      return v.parse(ProfileSchema, await res.json());
-    },
+    queryFn: fetchProfile,
   });
 
   const postsQuery = useQuery({
