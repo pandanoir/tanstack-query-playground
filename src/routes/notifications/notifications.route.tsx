@@ -9,7 +9,7 @@ export const notificationsRoute = createRoute({
   component: NotificationsPage,
 });
 
-export function NotificationsPage() {
+function NotificationsPage() {
   const notificationsQuery = useInfiniteQuery({
     queryKey: ['notifications'],
     queryFn: fetchNotifications,

@@ -5,7 +5,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { createRouter } from '@tanstack/react-router';
 import { postsRoute } from './routes/posts/list.route';
 import { postDetailRoute } from './routes/posts/detail.route';
-import { notificationsRoute } from './routes/notifications/notifications';
+import { notificationsRoute } from './routes/notifications/notifications.route';
 import { indexRoute } from './routes/index.route';
 import { rootRoute } from './routes/root.route';
 

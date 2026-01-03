@@ -9,7 +9,7 @@ export const postDetailRoute = createRoute({
   component: PostDetailPage,
 });
 
-export function PostDetailPage() {
+function PostDetailPage() {
   const { id } = postDetailRoute.useParams();
 
   const { isLoading, error, data } = useQuery({
